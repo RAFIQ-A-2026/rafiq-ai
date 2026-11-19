@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>رفیق | دستیار هوشمند فارسی</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#111827;color:#f8fafc;
+ font-family:Tahoma,Arial,sans-serif;
+}
+main{max-width:720px;margin:35px auto;padding:18px}
+header{text-align:center;padding:20px}
+h1{color:#60a5fa;font-size:34px}
+.subtitle{color:#cbd5e1}
+#chat{
+ background:#1e293b;border-radius:16px;padding:16px;
+ min-height:300px;max-height:55vh;overflow-y:auto;
+}
+.message{
+ padding:12px 15px;border-radius:14px;
+ margin:10px 0;line-height:2;white-space:pre-wrap;
+ overflow-wrap:anywhere;
+}
+.user{background:#2563eb;margin-left:35px}
+.bot{background:#334155;margin-right:35px}
+textarea{
+ width:100%;height:85px;margin-top:14px;
+ padding:14px;border-radius:12px;border:0;
+ font:16px Tahoma;resize:vertical;
+}
+.actions{display:flex;gap:9px;margin-top:10px}
+button{
+ border:0;border-radius:10px;padding:13px;
+ font:15px Tahoma;cursor:pointer;
+}
+#send{background:#2563eb;color:white;flex:1}
+#mic{background:#475569;color:white}
+#status{text-align:center;color:#94a3b8;font-size:12px;margin-top:12px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>رفیق 🤝</h1>
+<h3>دستیار هوشمند فارسی</h3>
+<p class="subtitle">همیشه آماده شنیدن، فهمیدن و کمک کردن</p>
+</header>
+
+<section id="chat" aria-live="polite"></section>
+
+<textarea id="msg" placeholder="پیامت را برای رفیق بنویس..."></textarea>
+
+<div class="actions">
+<button id="send" onclick="sendMessage()">ارسال پیام</button>
+<button id="mic" onclick="startVoice()">🎙️ میکروفون</button>
+</div>
+
+<p id="status">نسخه آزمایشی رفیق</p>
+</main>
+
+<script>
+const chat = document.getElementById("chat");
+const msg = document.getElementById("msg");
+const statusText = document.getElementById("status");
+
+let history = [];
+try {
+ history = JSON.parse(localStorage.getItem("rafiq_history") || "[]");
+} catch(e) {
+ history = [];
+}
+
+function saveHistory(){
+ localStorage.setItem("rafiq_history", JSON.stringify(history));
+}
+
+function addMessage(text, type, save=true){
+ const div = document.createElement("div");
+ div.className = "message " + type;
+ div.textContent = text;
+ chat.appendChild(div);
+ chat.scrollTop = chat.scrollHeight;
+
+ if(save){
+  history.push({text, type});
+  saveHistory();
+ }
+}
+
+history.forEach(item => addMessage(item.text, item.type, false));
+
+if(history.length === 0){
+ addMessage("سلام! من رفیق هستم. خوش اومدی 🌱", "bot");
+}
+
+function sendMessage(){
+ const text = msg.value.trim();
+ if(!text) return;
+
+ addMessage(text, "user");
+ msg.value = "";
+
+ addMessage(
+  "پیامت را دریافت کردم و در تاریخچه همین دستگاه ذخیره کردم. اتصال هوش مصنوعی واقعی در مرحله بعد انجام می‌شود.",
+  "bot"
+ );
+}
+
+msg.addEventListener("keydown", function(e){
+ if(e.key === "Enter" && e.ctrlKey){
+  sendMessage();
+ }
+});
+
+function startVoice(){
+ const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+ if(!Speech){
+  statusText.textContent = "تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود.";
+  return;
+ }
+
+ const recognition = new Speech();
+ recognition.lang = "fa-IR";
+ recognition.interimResults = false;
+
+ statusText.textContent = "در حال گوش دادن...";
+
+ recognition.onresult = function(event){
+  msg.value = event.results[0][0].transcript;
+  statusText.textContent = "صدایت دریافت شد؛ برای ارسال، دکمه ارسال را بزن.";
+ };
+
+ recognition.onerror = function(){
+  statusText.textContent = "تشخیص صدا انجام نشد؛ اجازه میکروفون را بررسی کن.";
+ };
+
+ recognition.onend = function(){
+  if(statusText.textContent === "در حال گوش دادن..."){
+   statusText.textContent = "آماده دریافت پیام";
+  }
+ };
+
+ recognition.start();
+}
+</script>
+</body>
+</html>
